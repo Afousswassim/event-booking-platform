@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+                                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <persistence-unit name="eventBookingPU" transaction-type="JTA">
+        <description>Unité de persistance pour Event Booking Platform sur WildFly</description>
+        <jta-data-source>java:jboss/datasources/EventBookingDS</jta-data-source>
+
+        <class>com.eventbooking.model.User</class>
+        <class>com.eventbooking.model.Category</class>
+        <class>com.eventbooking.model.Event</class>
+        <class>com.eventbooking.model.Reservation</class>
+        <class>com.eventbooking.model.Ticket</class>
+
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+
+        <properties>
+            <!-- Dialecte MySQL pour Hibernate intégré à WildFly -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+
+            <!-- Validation du schéma existant sans le modifier automatiquement -->
+            <property name="jakarta.persistence.schema-generation.database.action" value="validate"/>
+        </properties>
+    </persistence-unit>
+
+</persistence>
