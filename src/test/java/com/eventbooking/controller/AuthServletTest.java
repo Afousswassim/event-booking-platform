@@ -96,4 +96,36 @@ class AuthServletTest {
         verify(response).setStatus(204);
         verifyNoInteractions(users);
     }
+
+    @Test
+    void legacyLoginUsesTheSameAuthenticationAndExposesTheFormSessionAttributes() throws Exception {
+        String password = UUID.randomUUID().toString();
+        when(request.getServletPath()).thenReturn("/login");
+        when(request.getContextPath()).thenReturn("/event-booking-platform");
+        when(request.getParameter("email")).thenReturn("sam@example.test");
+        when(request.getParameter("password")).thenReturn(password);
+        when(users.authenticate("sam@example.test", password))
+                .thenReturn(new Profile(7L, "Sam", "sam@example.test", Role.CLIENT));
+
+        servlet.doPost(request, response);
+
+        verify(previous).invalidate();
+        verify(current).setAttribute(eq(AuthSession.CSRF), matches("[A-Za-z0-9_-]{43}"));
+        verify(current).setAttribute(AuthSession.IDENTITY, new AuthSession.Identity(7L, Role.CLIENT));
+        verify(current).setAttribute("userId", 7L);
+        verify(current).setAttribute("userName", "Sam");
+        verify(current).setAttribute("userRole", Role.CLIENT);
+        verify(response).sendRedirect("/event-booking-platform/");
+    }
+
+    @Test
+    void legacyLogoutRequiresPostAndLeavesTheSessionIntactOnGet() throws Exception {
+        when(request.getServletPath()).thenReturn("/logout");
+
+        servlet.doGet(request, response);
+
+        verify(response).setHeader("Allow", "POST");
+        verify(response).setStatus(405);
+        verifyNoInteractions(previous, users);
+    }
 }

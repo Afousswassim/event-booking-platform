@@ -7,6 +7,7 @@ import com.eventbooking.service.UserService.Profile;
 import jakarta.inject.Inject;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,15 +16,23 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Objects;
 
-@WebServlet("/auth/*")
+@WebServlet({"/auth/*", "/login", "/register", "/logout"})
 public class AuthServlet extends HttpServlet {
     private static final String FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
+    private static final String USER_NAME = "userName";
 
     @Inject
     private UserService users;
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
+        if (isLegacyForm(request)) {
+            if (!forwardLegacyForm(request, response, null)) {
+                AuthResponse.error(response, 404, "not_found");
+            }
+            return;
+        }
         try {
             switch (path(request)) {
                 case "/csrf" -> AuthResponse.json(response, 200, Json.createObjectBuilder()
@@ -42,7 +51,8 @@ public class AuthServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
         try {
             switch (path(request)) {
                 case "/register", "/login", "/profile" -> {
@@ -54,7 +64,11 @@ public class AuthServlet extends HttpServlet {
                 }
                 case "/logout" -> {
                     request.getSession(false).invalidate();
-                    response.setStatus(204);
+                    if ("/logout".equals(request.getServletPath())) {
+                        response.sendRedirect(request.getContextPath() + "/login");
+                    } else {
+                        response.setStatus(204);
+                    }
                 }
                 case "/csrf", "/access/client", "/access/admin", "/access/agent" ->
                     methodNotAllowed(response, "GET, HEAD");
@@ -70,7 +84,11 @@ public class AuthServlet extends HttpServlet {
         switch (path(request)) {
             case "/register" -> {
                 Profile profile = users.register(request.getParameter("nom"), email, request.getParameter("password"));
-                AuthResponse.json(response, 201, userBody(profile));
+                if (isLegacyForm(request)) {
+                    response.sendRedirect(request.getContextPath() + "/login?registered=1");
+                } else {
+                    AuthResponse.json(response, 201, userBody(profile));
+                }
             }
             case "/login" -> {
                 Profile profile = users.authenticate(email, request.getParameter("password"));
@@ -79,13 +97,22 @@ public class AuthServlet extends HttpServlet {
                 HttpSession session = request.getSession(true);
                 String csrf = AuthSession.csrfToken(session);
                 session.setAttribute(AuthSession.IDENTITY, new AuthSession.Identity(profile.id(), profile.role()));
-                AuthResponse.json(response, 200, Json.createObjectBuilder()
-                        .add("user", profileJson(profile)).add("csrfToken", csrf).build());
+                session.setAttribute("userId", profile.id());
+                session.setAttribute(USER_NAME, profile.nom());
+                session.setAttribute("userRole", profile.role());
+                if (isLegacyForm(request)) {
+                    response.sendRedirect(request.getContextPath() + "/");
+                } else {
+                    AuthResponse.json(response, 200, Json.createObjectBuilder()
+                            .add("user", profileJson(profile)).add("csrfToken", csrf).build());
+                }
             }
             case "/profile" -> {
-                var identity = AuthSession.identity(request.getSession(false));
+                HttpSession session = request.getSession(false);
+                var identity = AuthSession.identity(session);
                 Profile profile = users.updateProfile(identity.id(), request.getParameter("nom"), email,
                         request.getParameter("currentPassword"));
+                session.setAttribute(USER_NAME, profile.nom());
                 AuthResponse.json(response, 200, userBody(profile));
             }
             default -> throw new IllegalStateException("Unexpected authentication form route");
@@ -93,7 +120,10 @@ public class AuthServlet extends HttpServlet {
     }
 
     private static void respondToFailure(HttpServletRequest request, HttpServletResponse response,
-            UserService.Failure failure) throws IOException {
+            UserService.Failure failure) throws IOException, ServletException {
+        if (isLegacyForm(request) && forwardLegacyForm(request, response, failure.problem())) {
+            return;
+        }
         switch (failure.problem()) {
             case INVALID_NAME -> AuthResponse.error(response, 400, "invalid_name");
             case INVALID_EMAIL -> AuthResponse.error(response, 400, "invalid_email");
@@ -108,7 +138,34 @@ public class AuthServlet extends HttpServlet {
     }
 
     private static String path(HttpServletRequest request) {
+        if (isLegacyForm(request) || "/logout".equals(request.getServletPath())) {
+            return request.getServletPath();
+        }
         return Objects.toString(request.getPathInfo(), "");
+    }
+
+    private static boolean isLegacyForm(HttpServletRequest request) {
+        return "/login".equals(request.getServletPath()) || "/register".equals(request.getServletPath());
+    }
+
+    private static boolean forwardLegacyForm(HttpServletRequest request, HttpServletResponse response,
+            UserService.Problem problem) throws IOException, ServletException {
+        String view = "/WEB-INF/views/auth" + request.getServletPath() + ".jsp";
+        if (request.getServletContext().getResource(view) == null) {
+            return false;
+        }
+        request.setAttribute(AuthSession.CSRF, AuthSession.csrfToken(request.getSession(true)));
+        if (problem != null) {
+            request.setAttribute("error", switch (problem) {
+                case INVALID_NAME -> "Nom invalide";
+                case INVALID_EMAIL -> "Adresse e-mail invalide";
+                case INVALID_PASSWORD -> "Mot de passe invalide";
+                case EMAIL_TAKEN -> "Cette adresse e-mail est déjà utilisée";
+                case INVALID_CREDENTIALS, ACCOUNT_UNAVAILABLE -> "Email ou mot de passe incorrect";
+            });
+        }
+        request.getRequestDispatcher(view).forward(request, response);
+        return true;
     }
 
     private static boolean isForm(String contentType) {

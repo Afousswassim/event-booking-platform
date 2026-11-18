@@ -14,7 +14,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-@WebFilter(urlPatterns = {"/auth/*", "/client/*", "/admin/*", "/agent/*"})
+@WebFilter(urlPatterns = {"/auth/*", "/login", "/register", "/logout",
+        "/client/*", "/admin/*", "/agent/*", "/my-reservations", "/my-tickets"})
 public class AuthFilter implements Filter {
     public static final String CSRF_HEADER = "X-CSRF-Token";
     public static final String CSRF_FIELD = "csrfToken";
@@ -25,7 +26,9 @@ public class AuthFilter implements Filter {
         var request = (HttpServletRequest) input;
         var response = (HttpServletResponse) output;
         String path = request.getServletPath() + Objects.toString(request.getPathInfo(), "");
-        boolean authRoute = path.equals("/auth") || path.startsWith("/auth/");
+        boolean authRoute = path.equals("/auth") || path.startsWith("/auth/")
+                || path.equals("/login") || path.equals("/register") || path.equals("/logout");
+        String method = request.getMethod();
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("X-Content-Type-Options", "nosniff");
         request.setCharacterEncoding(StandardCharsets.UTF_8);
@@ -34,7 +37,11 @@ public class AuthFilter implements Filter {
         AuthSession.Identity identity = AuthSession.identity(session);
         if (!isPublic(path)) {
             if (identity == null) {
-                AuthResponse.error(response, 401, "authentication_required");
+                if (isClientPage(path) && (method.equals("GET") || method.equals("HEAD"))) {
+                    response.sendRedirect(request.getContextPath() + "/login");
+                } else {
+                    AuthResponse.error(response, 401, "authentication_required");
+                }
                 return;
             }
             Role required = requiredRole(path);
@@ -44,7 +51,6 @@ public class AuthFilter implements Filter {
             }
         }
 
-        String method = request.getMethod();
         if (!method.equals("GET") && !method.equals("HEAD") && !method.equals("OPTIONS")) {
             if (authRoute && request.getQueryString() != null) {
                 AuthResponse.error(response, 400, "unexpected_query");
@@ -65,13 +71,14 @@ public class AuthFilter implements Filter {
 
     private static boolean isPublic(String path) {
         return switch (path) {
-            case "/auth/csrf", "/auth/register", "/auth/login" -> true;
+            case "/auth/csrf", "/auth/register", "/auth/login", "/register", "/login" -> true;
             default -> false;
         };
     }
 
     private static Role requiredRole(String path) {
-        if (path.equals("/auth/access/client") || path.equals("/client") || path.startsWith("/client/")) {
+        if (path.equals("/auth/access/client") || path.equals("/client") || path.startsWith("/client/")
+                || isClientPage(path)) {
             return Role.CLIENT;
         }
         if (path.equals("/auth/access/admin") || path.equals("/admin") || path.startsWith("/admin/")) {
@@ -81,5 +88,9 @@ public class AuthFilter implements Filter {
             return Role.AGENT;
         }
         return null;
+    }
+
+    private static boolean isClientPage(String path) {
+        return path.equals("/my-reservations") || path.equals("/my-tickets");
     }
 }

@@ -18,6 +18,14 @@ Les POST transmettent leurs paramètres dans le corps UTF-8 au format `applicati
 
 Chaque objet `user` expose `id` (entier), `nom`, `email` et `role` (`CLIENT`, `ADMIN` ou `AGENT`). Le profil modifiable est déterminé par la session. Les paramètres supplémentaires comme `id`, `userId` et `role` sont ignorés. Les préfixes `/client/*`, `/admin/*` et `/agent/*` exigent le rôle correspondant. Les trois rôles ont accès à leur propre profil.
 
+## Routes pour les formulaires JSP
+
+`GET /login` et `GET /register` chargent respectivement `WEB-INF/views/auth/login.jsp` et `WEB-INF/views/auth/register.jsp` lorsque les JSP existent. Le servlet leur transmet `csrfToken`. En l’absence de la JSP, la réponse est `404`. Les routes JSON restent disponibles pour une interface indépendante.
+
+Les formulaires peuvent envoyer leurs champs à `POST /login` ou `POST /register` avec le jeton `csrfToken`. Une connexion réussie redirige vers l’accueil de l’application. Une inscription réussie redirige vers `/login?registered=1`. En cas d’erreur métier, une JSP présente est réaffichée avec un attribut `error`. Après une connexion par formulaire, le nouveau jeton est disponible dans la session ou via `GET /auth/csrf`.
+
+`POST /logout` avec le jeton invalide la session et redirige vers `/login`. Pour une session authentifiée, `GET /logout` répond `405`. Les routes `/my-reservations` et `/my-tickets` exigent le rôle `CLIENT`. Un GET ou HEAD anonyme sur ces routes redirige vers `/login`.
+
 ## Validation
 
 - Nom obligatoire après suppression des espaces en début et fin, 100 caractères Unicode au maximum et sans caractères de contrôle.
@@ -32,6 +40,8 @@ Chaque objet `user` expose `id` (entier), `nom`, `email` et `role` (`CLIENT`, `A
 3. Après connexion, remplacer le jeton précédent par celui de la réponse. Le cookie de session est renouvelé et le jeton précédent expire. Après déconnexion ou expiration, demander un nouveau jeton pour le prochain formulaire public.
 
 Le cookie est `HttpOnly`, `SameSite=Lax` et `Secure` sur HTTPS. La session expire après 30 minutes d’inactivité. Ses attributs serveur sont `authUser`, pour l’identifiant et le rôle (`${sessionScope.authUser.id}`, `${sessionScope.authUser.role}` en JSP), et `csrfToken` (`${sessionScope.csrfToken}`). Une session anonyme contient uniquement le jeton.
+
+Après une connexion, les formulaires JSP peuvent également lire les attributs `userId`, `userName` et `userRole`. Le filtre décide des droits à partir de `authUser`.
 
 ## Erreurs du backend
 

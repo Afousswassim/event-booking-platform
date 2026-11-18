@@ -15,7 +15,7 @@ Ce guide décrit la partie du Développeur 1 telle qu’elle existe dans le dép
 
 ### Périmètre actuel
 
-Le backend d’authentification fournit des routes JSON. Les pages de connexion, d’inscription et de profil restent à intégrer côté frontend. Les routes `/auth/access/*` répondent par un simple statut et servent à vérifier les droits. Les préfixes `/client/*`, `/admin/*` et `/agent/*` sont des règles de protection pour les routes que l’application y expose.
+Le backend d’authentification fournit des routes JSON et des routes de formulaire compatibles avec les JSP de connexion et d’inscription à venir. Les pages de connexion, d’inscription et de profil restent à intégrer côté frontend. Les routes `/auth/access/*` répondent par un simple statut et servent à vérifier les droits. Les préfixes `/client/*`, `/admin/*` et `/agent/*` protègent les routes que l’application y expose. `/my-reservations` et `/my-tickets` sont aussi réservées aux CLIENT.
 
 Le changement et la réinitialisation du mot de passe, la vérification de la boîte email, la gestion des comptes ou des rôles par un administrateur, la limitation des tentatives de connexion et l’authentification multifacteur restent à développer. Il n’y a ni jeton JWT ni route publique d’attribution des rôles. Le rôle en session est une copie du rôle lu à la connexion. Une modification du rôle directement dans MySQL sera prise en compte lors d’une prochaine connexion, après remplacement de la session.
 
@@ -34,7 +34,7 @@ Tous les chemins Java de production ci-dessous partent de `src/main/java/com/eve
 | [security/AuthFilter.java](src/main/java/com/eventbooking/security/AuthFilter.java) | Intercepte les URL concernées. `isPublic` repère les chemins publics et `requiredRole` détermine le rôle exigé. `doFilter` contrôle l’accès et le jeton avant de laisser continuer la chaîne. |
 | [security/AuthSession.java](src/main/java/com/eventbooking/security/AuthSession.java) | Centralise les attributs de session. `identity` lit l’objet `authUser`. `csrfToken` crée un jeton ou relit celui de la session. `validCsrf` compare les jetons. Le record sérialisable `Identity` contient l’identifiant et le rôle. |
 | [security/AuthResponse.java](src/main/java/com/eventbooking/security/AuthResponse.java) | `json` définit le statut, le type JSON et l’encodage UTF-8, puis écrit la réponse. `error` construit un corps de la forme `{"error":"code"}`. |
-| [service/AuthService.java](src/main/java/com/eventbooking/service/AuthService.java) | Fichier vide dans l’état analysé. Le service utilisé par le servlet est `UserService`. |
+| [service/AuthService.java](src/main/java/com/eventbooking/service/AuthService.java) | Conserve l’interface Java des commits distants avec `register` et `login`. Délègue à `UserService` puis charge l’entité `User` pour les appelants de cette interface. Le servlet utilise directement `UserService` et son type `Profile`. |
 
 | Configuration | Fonction dans le parcours |
 | --- | --- |
@@ -72,9 +72,10 @@ UserService.Profile  ->  AuthServlet  ->  AuthResponse  ->  réponse HTTP
 Extrait d’`AuthServlet.java`.
 
 ```java
-@WebServlet("/auth/*")
+@WebServlet({"/auth/*", "/login", "/register", "/logout"})
 public class AuthServlet extends HttpServlet {
     private static final String FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
+    private static final String USER_NAME = "userName";
 
     @Inject
     private UserService users;
@@ -183,6 +184,7 @@ HTTP traite chaque requête séparément. Le navigateur renvoie `JSESSIONID` pou
 | --- | --- |
 | `authUser` | Présent après la connexion. Contient une `AuthSession.Identity` avec `id` et `role`. Les accès Java sont `identity.id()` et `identity.role()`. En JSP, `sessionScope.authUser.id` et `sessionScope.authUser.role` accèdent au même objet via les getters. |
 | `csrfToken` | Chaîne générée par `SecureRandom` à partir de 32 octets aléatoires, encodés en Base64 URL sans remplissage. Résultat de 43 caractères. Présent aussi sur une session anonyme créée par `GET /auth/csrf`. |
+| `userId`, `userName`, `userRole` | Attributs exposés aux JSP lorsque la connexion réussit. Le filtre lit `authUser` pour décider des droits. |
 
 `getSession(false)` retrouve une session existante ou renvoie `null`. `getSession(true)` peut en créer une. `invalidate()` détruit la session et rend son identifiant inutilisable pour l’application.
 
@@ -201,7 +203,8 @@ Une attaque **CSRF** consiste à faire déclencher une requête à un navigateur
 Extrait d’`AuthFilter.java`.
 
 ```java
-@WebFilter(urlPatterns = {"/auth/*", "/client/*", "/admin/*", "/agent/*"})
+@WebFilter(urlPatterns = {"/auth/*", "/login", "/register", "/logout",
+        "/client/*", "/admin/*", "/agent/*", "/my-reservations", "/my-tickets"})
 ```
 
 ```java
@@ -218,7 +221,7 @@ if (!isPublic(path)) {
 }
 ```
 
-Le filtre reconstitue le chemin à partir de `getServletPath()` et `getPathInfo()`. Les chemins publics sont `/auth/csrf`, `/auth/register` et `/auth/login`. Les autres chemins couverts exigent une session authentifiée. Les espaces par rôle exigent une égalité exacte. Un ADMIN n’a pas automatiquement accès à l’espace CLIENT.
+Le filtre reconstitue le chemin à partir de `getServletPath()` et `getPathInfo()`. Les chemins publics sont `/auth/csrf`, `/auth/register`, `/auth/login`, `/register` et `/login`. Les autres chemins couverts exigent une session authentifiée. Les espaces par rôle exigent une égalité exacte. Un ADMIN n’a pas automatiquement accès à l’espace CLIENT. Un GET ou HEAD anonyme sur les deux routes de réservations et de billets redirige vers `/login`.
 
 Le contrôle de session et de rôle a lieu avant le contrôle CSRF. Le filtre contrôle le jeton pour les méthodes autres que GET, HEAD et OPTIONS. Un en-tête fourni a priorité sur le champ de formulaire. Le champ est lu uniquement pour un POST sans query string. `chain.doFilter(request, response)` transmet la requête au composant suivant après les contrôles. Chaque `return` après une réponse d’erreur arrête le traitement. Le filtre ajoute aussi `Cache-Control: no-store` pour éviter la mise en cache de réponses sensibles et `X-Content-Type-Options: nosniff` pour demander au navigateur de respecter le type indiqué.
 
@@ -268,8 +271,15 @@ previous.invalidate();
 HttpSession session = request.getSession(true);
 String csrf = AuthSession.csrfToken(session);
 session.setAttribute(AuthSession.IDENTITY, new AuthSession.Identity(profile.id(), profile.role()));
-AuthResponse.json(response, 200, Json.createObjectBuilder()
-        .add("user", profileJson(profile)).add("csrfToken", csrf).build());
+session.setAttribute("userId", profile.id());
+session.setAttribute(USER_NAME, profile.nom());
+session.setAttribute("userRole", profile.role());
+if (isLegacyForm(request)) {
+    response.sendRedirect(request.getContextPath() + "/");
+} else {
+    AuthResponse.json(response, 200, Json.createObjectBuilder()
+            .add("user", profileJson(profile)).add("csrfToken", csrf).build());
+}
 ```
 
 6. WildFly émet un nouveau cookie et la réponse `200` contient `user` et `csrfToken`. Le client utilise cette nouvelle paire. Cette étape empêche la **fixation de session**, où un identifiant connu avant la connexion servirait ensuite à accéder au compte.
@@ -289,7 +299,7 @@ Pour `POST /auth/logout`, le filtre demande une identité et le jeton courant. L
 
 ### 4.6 Tableau des routes
 
-Les chemins commencent après le contexte `/event-booking-platform`. Les formulaires utilisent `application/x-www-form-urlencoded` en UTF-8 et les réponses avec contenu utilisent `application/json`. Envoyer le jeton avec chaque POST. Le serveur donne un statut HTTP et laisse le frontend choisir l’écran à afficher.
+Les chemins commencent après le contexte `/event-booking-platform`. Les formulaires utilisent `application/x-www-form-urlencoded` en UTF-8. Les routes `/auth/*` répondent en `application/json` lorsqu’elles ont un contenu. Envoyer le jeton avec chaque POST. Le [contrat HTTP](docs/auth.md) présente aussi les routes de formulaire `/login`, `/register` et `/logout` et leurs redirections.
 
 | Méthode et chemin | Accès | Champs du formulaire hors CSRF | Succès |
 | --- | --- | --- | --- |
@@ -370,8 +380,8 @@ secure() -> secure-cookie()
 
 ### Étape 5 — Écrire le filtre et le servlet
 
-1. Crée `security/AuthFilter.java` avec les quatre motifs `@WebFilter` de la section 3.5. Implémente les méthodes privées `isPublic` et `requiredRole`, puis `doFilter`. Dans cette méthode, reconstruis le chemin, règle les en-têtes de réponse et l’encodage, lis la session sans en créer, puis vérifie l’identité et le rôle. Pour une méthode qui modifie l’état, vérifie l’absence de query string sur les routes d’authentification, lis le jeton et contrôle-le. Termine par `chain.doFilter` seulement si la demande a passé les contrôles.
-2. Crée `controller/AuthServlet.java` avec `@WebServlet("/auth/*")` et `@Inject UserService`. Dans `doGet`, gère le jeton, le profil et les trois contrôles de rôle. Dans `doPost`, exige le bon type de formulaire pour l’inscription, la connexion et la modification du profil. Implémente aussi la déconnexion. Pour la connexion, reproduis l’ordre de la section 4.3 afin que l’ancienne session soit invalidée après vérification des identifiants.
+1. Crée `security/AuthFilter.java` avec les motifs `@WebFilter` de la section 3.5. Implémente les méthodes privées `isPublic`, `requiredRole` et `isClientPage`, puis `doFilter`. Dans cette méthode, reconstruis le chemin, règle les en-têtes de réponse et l’encodage, lis la session sans en créer, puis vérifie l’identité et le rôle. Pour une méthode qui modifie l’état, vérifie l’absence de query string sur les routes d’authentification, lis le jeton et contrôle-le. Termine par `chain.doFilter` seulement si la demande a passé les contrôles.
+2. Crée `controller/AuthServlet.java` avec la déclaration `@WebServlet` de la section 3.1 et `@Inject UserService`. Dans `doGet`, gère le jeton, le profil, les trois contrôles de rôle et le transfert vers les JSP lorsqu’elles existent. Dans `doPost`, exige le bon type de formulaire pour l’inscription, la connexion et la modification du profil. Implémente aussi la déconnexion. Pour la connexion, reproduis l’ordre de la section 4.3 afin que l’ancienne session soit invalidée après vérification des identifiants.
 3. Ajoute `path`, `isForm`, `methodNotAllowed`, `userBody` et `profileJson`. Pour les erreurs du service, utilise `respondToFailure` avec la correspondance de la section 7. Au moment d’écrire la réponse, décide explicitement si elle doit avoir un corps JSON ou un statut `204`.
 
 ### Étape 6 — Écrire les tests et déployer
@@ -393,7 +403,7 @@ Depuis la racine du projet, lancer `mvn clean verify`. Les trois classes sont so
 | [AuthServletTest](src/test/java/com/eventbooking/controller/AuthServletTest.java) | Ordre d’invalidation et de création de session, enregistrement de l’identité et du jeton, identifiant du profil obtenu via la session, déconnexion. |
 | [AuthFilterTest](src/test/java/com/eventbooking/security/AuthFilterTest.java) | Refus d’une session anonyme, matrice des trois rôles, préfixe protégé, jetons manquants ou incorrects, jeton fourni en en-tête ou dans le corps, refus des paramètres transmis dans l’URL. |
 
-Les rapports existants dans `target/surefire-reports/` indiquent **16 tests réussis**. Ces tests isolent les classes avec Mockito. Ils vérifient les décisions du code. Les tests HTTP ci-dessous font intervenir le vrai conteneur, le navigateur simulé par PowerShell et MySQL.
+Les rapports Maven se trouvent dans `target/surefire-reports/`. Ces tests isolent les classes avec Mockito. Ils vérifient les décisions du code, y compris l’obligation d’un POST avec jeton sur les routes de formulaire et la protection des routes de réservation et de billets. Les tests HTTP ci-dessous font intervenir le vrai conteneur, le navigateur simulé par PowerShell et MySQL.
 
 ### 6.2 Préparer un client HTTP PowerShell avec des cookies
 

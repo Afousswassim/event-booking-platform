@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -110,6 +111,41 @@ class AuthFilterTest {
         when(request.getQueryString()).thenReturn("csrfToken=" + TOKEN);
         filter.doFilter(request, response, chain);
         denied(400, "unexpected_query");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/login", "/register", "/logout"})
+    void browserFormPostsRequireCsrf(String path) throws Exception {
+        authenticate(Role.CLIENT);
+        when(request.getServletPath()).thenReturn(path);
+        when(request.getMethod()).thenReturn("POST");
+        when(session.getAttribute(AuthSession.CSRF)).thenReturn(TOKEN);
+
+        filter.doFilter(request, response, chain);
+        denied(403, "invalid_csrf");
+
+        when(request.getParameter(AuthFilter.CSRF_FIELD)).thenReturn(TOKEN);
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/my-reservations", "/my-tickets"})
+    void browserClientPagesRedirectGuestsAndRejectOtherRoles(String path) throws Exception {
+        when(request.getServletPath()).thenReturn(path);
+        when(request.getContextPath()).thenReturn("/event-booking-platform");
+
+        filter.doFilter(request, response, chain);
+        verify(response).sendRedirect("/event-booking-platform/login");
+        verifyNoInteractions(chain);
+
+        authenticate(Role.ADMIN);
+        filter.doFilter(request, response, chain);
+        denied(403, "forbidden");
+
+        authenticate(Role.CLIENT);
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
     }
 
     private void authenticate(Role role) {
