@@ -10,10 +10,12 @@
         <jta-data-source>java:jboss/datasources/EventBookingDS</jta-data-source>
 
         <class>com.eventbooking.model.User</class>
+        <!-- Entités des autres fonctionnalités à décommenter lors de leur implémentation:
         <class>com.eventbooking.model.Category</class>
         <class>com.eventbooking.model.Event</class>
         <class>com.eventbooking.model.Reservation</class>
         <class>com.eventbooking.model.Ticket</class>
+        -->
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
@@ -24,7 +26,7 @@
             <property name="hibernate.format_sql" value="true"/>
 
             <!-- Validation du schéma existant sans le modifier automatiquement -->
-            <property name="jakarta.persistence.schema-generation.database.action" value="validate"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
         </properties>
     </persistence-unit>
 
