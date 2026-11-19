@@ -1,0 +1,308 @@
+<%@ page pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+
+<!-- Skip to main content for keyboard accessibility -->
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
+
+<header class="site-header" id="site-header">
+  <div class="header-container">
+    
+    <!-- Logo -->
+    <div class="header-brand">
+      <a href="${ctx}/" class="brand-logo" aria-label="Evently Accueil">
+        evently<span class="logo-dot">.</span>
+      </a>
+    </div>
+
+    <!-- Desktop Navigation Links with Dropdowns -->
+    <nav class="main-nav" id="main-nav" aria-label="Navigation principale">
+      <ul class="nav-list" role="menubar">
+        
+        <!-- Explorer Dropdown -->
+        <li class="nav-item has-dropdown" role="none">
+          <button class="nav-link dropdown-toggle" aria-expanded="false" aria-haspopup="true" role="menuitem">
+            <span>Explorer</span>
+            <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu" role="menu" aria-label="Sous-menu Explorer">
+            <a href="#" class="dropdown-item" role="menuitem" data-action="explore-concerts">
+              <span class="dropdown-item-title">Concerts & Live</span>
+              <span class="dropdown-item-desc">Les scènes majeures et artistes du moment</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="explore-festivals">
+              <span class="dropdown-item-title">Festivals</span>
+              <span class="dropdown-item-desc">Week-ends immersifs et programmations d'envergure</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="explore-nightlife">
+              <span class="dropdown-item-title">Vie Nocturne & Clubs</span>
+              <span class="dropdown-item-desc">Sets DJ, clubbing et soirées exclusives</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="explore-experiences">
+              <span class="dropdown-item-title">Expériences Uniques</span>
+              <span class="dropdown-item-desc">Moments artistiques et scènes secrètes</span>
+            </a>
+          </div>
+        </li>
+
+        <!-- Industries Dropdown -->
+        <li class="nav-item has-dropdown" role="none">
+          <button class="nav-link dropdown-toggle" aria-expanded="false" aria-haspopup="true" role="menuitem">
+            <span>Industries</span>
+            <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu" role="menu" aria-label="Sous-menu Industries">
+            <a href="#" class="dropdown-item" role="menuitem" data-action="ind-music">
+              <span class="dropdown-item-title">Musique & Production</span>
+              <span class="dropdown-item-desc">Artistes, labels et tourneurs</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="ind-venues">
+              <span class="dropdown-item-title">Salles & Arènes</span>
+              <span class="dropdown-item-desc">Gestionnaires de lieux et auditoriums</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="ind-festivals">
+              <span class="dropdown-item-title">Comités de Festivals</span>
+              <span class="dropdown-item-desc">Organisation d'événements à grand public</span>
+            </a>
+          </div>
+        </li>
+
+        <!-- Services Dropdown -->
+        <li class="nav-item has-dropdown" role="none">
+          <button class="nav-link dropdown-toggle" aria-expanded="false" aria-haspopup="true" role="menuitem">
+            <span>Services</span>
+            <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu" role="menu" aria-label="Sous-menu Services">
+            <a href="#" class="dropdown-item" role="menuitem" data-action="srv-tickets">
+              <span class="dropdown-item-title">Billetterie Digitale</span>
+              <span class="dropdown-item-desc">QR codes instantanés et sécurisés</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="srv-vip">
+              <span class="dropdown-item-title">Expérience VIP</span>
+              <span class="dropdown-item-desc">Pass backstage et salons premium</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="srv-organizers">
+              <span class="dropdown-item-title">Portail Organisateurs</span>
+              <span class="dropdown-item-desc">Diffusion et gestion des jauges</span>
+            </a>
+          </div>
+        </li>
+
+        <!-- À propos Dropdown -->
+        <li class="nav-item has-dropdown" role="none">
+          <button class="nav-link dropdown-toggle" aria-expanded="false" aria-haspopup="true" role="menuitem">
+            <span>À propos</span>
+            <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu" role="menu" aria-label="Sous-menu À propos">
+            <a href="#" class="dropdown-item" role="menuitem" data-action="about-vision">
+              <span class="dropdown-item-title">Notre Vision</span>
+              <span class="dropdown-item-desc">Redéfinir la sortie live au Maroc et ailleurs</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="about-press">
+              <span class="dropdown-item-title">Presse & Partenariats</span>
+              <span class="dropdown-item-desc">Dossier média et opportunités</span>
+            </a>
+            <a href="#" class="dropdown-item" role="menuitem" data-action="about-contact">
+              <span class="dropdown-item-title">Contact</span>
+              <span class="dropdown-item-desc">Une question ? Écrivez-nous</span>
+            </a>
+          </div>
+        </li>
+
+      </ul>
+    </nav>
+
+    <!-- Search Bar -->
+    <div class="header-search">
+      <div class="search-pill" id="search-pill">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="search" 
+          id="global-search-input" 
+          class="search-input" 
+          placeholder="Rechercher des événements, artistes..." 
+          autocomplete="off" 
+          aria-label="Rechercher des événements ou des artistes"
+        />
+        <button type="button" class="search-clear-btn" id="search-clear-btn" aria-label="Effacer la recherche" style="display: none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Quick Search Interactive Dropdown (Frontend Prototype) -->
+      <div class="search-suggestions" id="search-suggestions" role="listbox" aria-label="Suggestions de recherche">
+        <div class="suggestions-header">Tendances actuelles</div>
+        <button type="button" class="suggestion-item" role="option" data-search="Atlas Afterdark Casablanca">
+          <span class="suggestion-icon">🔥</span>
+          <span class="suggestion-text"><strong>Atlas Afterdark</strong> — Casablanca (Live music)</span>
+        </button>
+        <button type="button" class="suggestion-item" role="option" data-search="Festival Oasis Marrakech">
+          <span class="suggestion-icon">🎵</span>
+          <span class="suggestion-text">Festival Oasis — Marrakech</span>
+        </button>
+        <button type="button" class="suggestion-item" role="option" data-search="Jazz au Chellah Rabat">
+          <span class="suggestion-icon">🎷</span>
+          <span class="suggestion-text">Jazz au Chellah — Rabat</span>
+        </button>
+        <button type="button" class="suggestion-item" role="option" data-search="Concerts électro Tanger">
+          <span class="suggestion-icon">⚡</span>
+          <span class="suggestion-text">Concerts électro & rooftops — Tanger</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Actions: Connexion, S'inscrire, Langue -->
+    <div class="header-actions">
+      
+      <!-- Connexion Button -->
+      <button type="button" class="btn btn-outline-nav" id="btn-login" aria-label="Se connecter">
+        Connexion
+      </button>
+
+      <!-- S'inscrire Button -->
+      <button type="button" class="btn btn-primary-nav" id="btn-signup" aria-label="Créer un compte">
+        <span>S'inscrire</span>
+        <svg class="arrow-up-right-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="7" y1="17" x2="17" y2="7"></line>
+          <polyline points="7 7 17 7 17 17"></polyline>
+        </svg>
+      </button>
+
+      <!-- Language Selector -->
+      <div class="lang-dropdown-wrapper">
+        <button type="button" class="btn-lang" id="btn-lang" aria-expanded="false" aria-haspopup="true" aria-label="Changer de langue">
+          <svg class="globe-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </button>
+        <div class="lang-menu" id="lang-menu" role="menu" aria-label="Sélection de la langue">
+          <button type="button" class="lang-item active" role="menuitem" data-lang="fr">
+            <span>Français</span>
+            <span class="lang-check">✓</span>
+          </button>
+          <button type="button" class="lang-item" role="menuitem" data-lang="en">
+            <span>English</span>
+            <span class="lang-check" style="display:none;">✓</span>
+          </button>
+          <button type="button" class="lang-item" role="menuitem" data-lang="ar">
+            <span>العربية</span>
+            <span class="lang-check" style="display:none;">✓</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button type="button" class="mobile-hamburger" id="mobile-hamburger" aria-expanded="false" aria-controls="mobile-drawer" aria-label="Menu principal">
+        <span class="bar bar-1"></span>
+        <span class="bar bar-2"></span>
+        <span class="bar bar-3"></span>
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- Mobile Navigation Drawer -->
+  <div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+    <div class="mobile-drawer-content">
+      
+      <!-- Mobile Search -->
+      <div class="mobile-search-wrapper">
+        <div class="search-pill">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" class="search-input" id="mobile-search-input" placeholder="Rechercher des événements..." aria-label="Recherche mobile" />
+        </div>
+      </div>
+
+      <!-- Mobile Menu Accordion -->
+      <nav class="mobile-nav" aria-label="Menu mobile">
+        <ul class="mobile-nav-list">
+          <li class="mobile-nav-item">
+            <button type="button" class="mobile-nav-btn" data-mobile-toggle="mob-explore">
+              <span>Explorer</span>
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="mobile-submenu" id="mob-explore">
+              <a href="#" class="mobile-sublink" data-action="explore-concerts">Concerts & Live</a>
+              <a href="#" class="mobile-sublink" data-action="explore-festivals">Festivals</a>
+              <a href="#" class="mobile-sublink" data-action="explore-nightlife">Vie Nocturne & Clubs</a>
+              <a href="#" class="mobile-sublink" data-action="explore-experiences">Expériences Uniques</a>
+            </div>
+          </li>
+          <li class="mobile-nav-item">
+            <button type="button" class="mobile-nav-btn" data-mobile-toggle="mob-industries">
+              <span>Industries</span>
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="mobile-submenu" id="mob-industries">
+              <a href="#" class="mobile-sublink" data-action="ind-music">Musique & Production</a>
+              <a href="#" class="mobile-sublink" data-action="ind-venues">Salles & Arènes</a>
+              <a href="#" class="mobile-sublink" data-action="ind-festivals">Comités de Festivals</a>
+            </div>
+          </li>
+          <li class="mobile-nav-item">
+            <button type="button" class="mobile-nav-btn" data-mobile-toggle="mob-services">
+              <span>Services</span>
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="mobile-submenu" id="mob-services">
+              <a href="#" class="mobile-sublink" data-action="srv-tickets">Billetterie Digitale</a>
+              <a href="#" class="mobile-sublink" data-action="srv-vip">Expérience VIP</a>
+              <a href="#" class="mobile-sublink" data-action="srv-organizers">Portail Organisateurs</a>
+            </div>
+          </li>
+          <li class="mobile-nav-item">
+            <button type="button" class="mobile-nav-btn" data-mobile-toggle="mob-about">
+              <span>À propos</span>
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="mobile-submenu" id="mob-about">
+              <a href="#" class="mobile-sublink" data-action="about-vision">Notre Vision</a>
+              <a href="#" class="mobile-sublink" data-action="about-press">Presse & Partenariats</a>
+              <a href="#" class="mobile-sublink" data-action="about-contact">Contact</a>
+            </div>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Mobile Action Buttons -->
+      <div class="mobile-actions">
+        <button type="button" class="btn btn-outline-nav mobile-btn" id="mobile-btn-login">Connexion</button>
+        <button type="button" class="btn btn-primary-nav mobile-btn" id="mobile-btn-signup">
+          <span>S'inscrire</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </button>
+      </div>
+
+      <!-- Mobile Lang Switcher -->
+      <div class="mobile-lang-row">
+        <span class="mobile-lang-label">Langue :</span>
+        <button type="button" class="mobile-lang-opt active" data-lang="fr">FR</button>
+        <span class="mobile-lang-sep">|</span>
+        <button type="button" class="mobile-lang-opt" data-lang="en">EN</button>
+        <span class="mobile-lang-sep">|</span>
+        <button type="button" class="mobile-lang-opt" data-lang="ar">AR</button>
+      </div>
+
+    </div>
+  </div>
+  <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop"></div>
+</header>
