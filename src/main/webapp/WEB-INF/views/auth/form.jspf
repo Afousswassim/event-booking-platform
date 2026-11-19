@@ -1,0 +1,108 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="route" value="${registering ? 'register' : 'login'}" />
+<c:set var="pageTitle" value="${registering ? 'Inscription' : 'Connexion'}" />
+<!doctype html>
+<html lang="fr">
+<head>
+    <%@ include file="/WEB-INF/views/fragments/head.jspf" %>
+    <link rel="stylesheet" href="${ctx}/css/auth.css">
+    <script src="${ctx}/js/auth.js" defer></script>
+</head>
+<body class="auth-page">
+    <%@ include file="/WEB-INF/views/fragments/header.jspf" %>
+    <main class="auth-layout" id="main-content">
+        <aside class="auth-scene" aria-label="À l’affiche sur Evently">
+            <div class="auth-scene-copy">
+                <p class="auth-kicker">Votre histoire continue ici</p>
+                <h2>Les meilleurs moments commencent par <em>un billet.</em></h2>
+                <p class="auth-scene-description">Des concerts, des festivals et des soirées à vivre ensemble. Votre prochaine sortie commence ici.</p>
+            </div>
+            <figure class="auth-event">
+                <img src="${ctx}/images/atlas-afterdark.jpg" alt="" width="72" height="72">
+                <figcaption>
+                    <span class="auth-event-label">À l’affiche</span>
+                    <strong>Atlas Afterdark</strong>
+                    <span>Casablanca · Live Music</span>
+                </figcaption>
+                <time datetime="2026-12-12" aria-label="12 décembre 2026"><strong>12</strong><span>DÉC 2026</span></time>
+            </figure>
+        </aside>
+        <section class="auth-panel" aria-labelledby="auth-title">
+            <div class="auth-content">
+                <nav class="auth-tabs" aria-label="Authentification">
+                    <a href="${ctx}/login" ${registering ? '' : 'aria-current="page"'}>Connexion</a>
+                    <a href="${ctx}/register" ${registering ? 'aria-current="page"' : ''}>Inscription</a>
+                </nav>
+                <div class="auth-heading">
+                    <h1 id="auth-title">${registering ? 'Rejoignez Evently.' : 'Heureux de vous revoir.'}</h1>
+                    <p>${registering ? 'Créez votre compte et commencez à vivre des expériences inoubliables.' : 'Connectez-vous pour retrouver vos réservations et vos billets.'}</p>
+                </div>
+                <c:if test="${requestScope.registrationComplete}">
+                    <p class="auth-notice auth-notice-success" role="status">Votre compte est créé. Vous pouvez vous connecter.</p>
+                </c:if>
+                <p class="auth-notice auth-notice-error" id="auth-feedback" role="alert" ${empty requestScope.error ? 'hidden' : ''}><c:out value="${requestScope.error}" /></p>
+                <form class="auth-form" method="post" action="${ctx}/${route}" data-endpoint="${ctx}/${registering ? 'register' : 'auth/login'}" data-mode="${route}">
+                    <input type="hidden" name="csrfToken" value="<c:out value='${requestScope.csrfToken}' />">
+                    <c:if test="${registering}">
+                        <div class="auth-field">
+                            <label for="auth-name">Nom complet</label>
+                            <input id="auth-name" name="nom" autocomplete="name" maxlength="100" placeholder="Votre nom complet" required aria-describedby="auth-name-error">
+                            <p class="auth-field-error" id="auth-name-error" hidden></p>
+                        </div>
+                    </c:if>
+                    <div class="auth-field">
+                        <label for="auth-email">Adresse email</label>
+                        <input id="auth-email" name="email" type="email" autocomplete="${registering ? 'email' : 'username'}" maxlength="150" placeholder="vous@exemple.com" required aria-describedby="auth-email-error">
+                        <p class="auth-field-error" id="auth-email-error" hidden></p>
+                    </div>
+                    <div class="auth-field">
+                        <label for="auth-password">Mot de passe</label>
+                        <div class="auth-password">
+                            <input id="auth-password" name="password" type="password" autocomplete="${registering ? 'new-password' : 'current-password'}" maxlength="72" placeholder="Votre mot de passe" required ${registering ? 'minlength="12"' : ''} aria-describedby="${registering ? 'auth-password-hint ' : ''}auth-password-error">
+                            <button class="auth-reveal" type="button" aria-controls="auth-password" aria-pressed="false" aria-label="Visibilité du mot de passe" hidden><span class="auth-eye" aria-hidden="true"></span><span>Afficher</span></button>
+                        </div>
+                        <c:if test="${registering}">
+                            <p class="auth-hint" id="auth-password-hint">Au moins 12 caractères.</p>
+                            <div class="auth-strength" hidden>
+                                <meter id="auth-strength" min="0" max="3" value="0" aria-label="Robustesse du mot de passe"></meter>
+                                <span id="auth-strength-label" aria-live="polite"></span>
+                            </div>
+                        </c:if>
+                        <p class="auth-field-error" id="auth-password-error" hidden></p>
+                    </div>
+                    <c:choose>
+                        <c:when test="${registering}">
+                            <div class="auth-field">
+                                <label for="auth-confirm">Confirmation du mot de passe</label>
+                                <div class="auth-password">
+                                    <input id="auth-confirm" name="passwordConfirmation" type="password" autocomplete="new-password" maxlength="72" placeholder="Retapez le mot de passe" required aria-describedby="auth-confirm-error">
+                                    <button class="auth-reveal" type="button" aria-controls="auth-confirm" aria-pressed="false" aria-label="Visibilité de la confirmation du mot de passe" hidden><span class="auth-eye" aria-hidden="true"></span><span>Afficher</span></button>
+                                </div>
+                                <p class="auth-field-error" id="auth-confirm-error" hidden></p>
+                            </div>
+                            <div class="auth-field">
+                                <label class="auth-check" for="auth-terms"><input id="auth-terms" name="terms" value="accepted" type="checkbox" required aria-describedby="auth-terms-error"> J’accepte les conditions d’utilisation.</label>
+                                <p class="auth-field-error" id="auth-terms-error" hidden></p>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <label class="auth-check" id="auth-remember-option" for="auth-remember" hidden><input id="auth-remember" type="checkbox" aria-describedby="auth-remember-hint"> Se souvenir de moi</label>
+                            <p class="auth-hint auth-remember-hint" id="auth-remember-hint" hidden>Mémorise uniquement votre adresse email sur cet appareil.</p>
+                        </c:otherwise>
+                    </c:choose>
+                    <button type="submit" class="button button-primary auth-submit" data-loading="${registering ? 'Création en cours…' : 'Connexion en cours…'}">
+                        <span class="auth-submit-text">${registering ? 'Créer mon compte' : 'Se connecter'}</span><span class="auth-submit-arrow" aria-hidden="true">↗</span>
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    <c:choose>
+                        <c:when test="${registering}">Déjà membre ? <a href="${ctx}/login">Se connecter</a></c:when>
+                        <c:otherwise>Pas encore de compte ? <a href="${ctx}/register">S’inscrire</a></c:otherwise>
+                    </c:choose>
+                </p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

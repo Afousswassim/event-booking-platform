@@ -1,0 +1,23 @@
+<%@ page pageEncoding="UTF-8" %>
+<footer class="site-footer">
+    <div class="site-container footer-row">
+        <div>
+            <a class="site-brand" href="${ctx}/" aria-label="Evently, accueil">evently<span>.</span></a>
+            <p>Concerts, festivals et sorties au Maroc.</p>
+        </div>
+        <nav aria-label="Pied de page">
+            <a href="${ctx}/">Accueil</a>
+            <a href="${ctx}/events#catalogue">Événements</a>
+            <a href="${ctx}/#categories">Catégories</a>
+            <c:choose>
+                <c:when test="${not empty sessionScope.authUser}">
+                    <a href="${ctx}${sessionScope.authUser.role.homePath}">Mon espace</a>
+                </c:when>
+                <c:otherwise>
+                    <a href="${ctx}/login">Connexion</a>
+                    <a href="${ctx}/register">Inscription</a>
+                </c:otherwise>
+            </c:choose>
+        </nav>
+    </div>
+</footer>

@@ -1,0 +1,23 @@
+<%@ page pageEncoding="UTF-8" %>
+<a href="#main-content" class="skip-link">Aller au contenu</a>
+<header class="site-header">
+    <div class="site-bar">
+        <a class="site-brand" href="${ctx}/" aria-label="Evently, accueil">evently<span>.</span></a>
+        <nav class="site-nav" aria-label="Navigation principale">
+            <a href="${ctx}/">Accueil</a>
+            <a href="${ctx}/events#catalogue">Événements</a>
+            <a href="${ctx}/#categories">Catégories</a>
+        </nav>
+        <div class="site-actions">
+            <c:choose>
+                <c:when test="${not empty sessionScope.authUser}">
+                    <a class="button button-primary" href="${ctx}${sessionScope.authUser.role.homePath}">Mon espace</a>
+                </c:when>
+                <c:otherwise>
+                    <a id="btn-login" class="button button-outline" href="${ctx}/login">Connexion</a>
+                    <a id="btn-signup" class="button button-primary" href="${ctx}/register">Inscription</a>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </div>
+</header>
