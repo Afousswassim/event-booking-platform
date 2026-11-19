@@ -337,27 +337,28 @@
   // 6. ACTION BUTTONS & INTERACTIVE PROTOFEEDBACK
   // ========================================================================
 
-  // Connexion
+  try {
+    if (sessionStorage.getItem('evently.loginSucceeded') === '1') {
+      sessionStorage.removeItem('evently.loginSucceeded');
+      showToast('Vous êtes connecté à Evently.');
+    }
+  } catch {
+    // The homepage remains usable with browser storage disabled.
+  }
+
+  const homeUrl = document.querySelector('.header-brand .brand-logo').href;
+
   function handleLoginClick() {
     closeMobileDrawer();
-    showModal(
-      'Connexion Utilisateur',
-      "Le module d'authentification sécurisé (Jakarta EE / JWT / Session) sera disponible dans l'Étape 2 du développement.",
-      '🔐'
-    );
+    window.location.assign(new URL('login', homeUrl));
   }
 
   if (btnLogin) btnLogin.addEventListener('click', handleLoginClick);
   if (mobileBtnLogin) mobileBtnLogin.addEventListener('click', handleLoginClick);
 
-  // Inscription
   function handleSignupClick() {
     closeMobileDrawer();
-    showModal(
-      'Inscription & Création de Compte',
-      "Le formulaire d'inscription spectateurs et organisateurs d'événements sera intégré lors de la prochaine étape.",
-      '🚀'
-    );
+    window.location.assign(new URL('register', homeUrl));
   }
 
   if (btnSignup) btnSignup.addEventListener('click', handleSignupClick);
