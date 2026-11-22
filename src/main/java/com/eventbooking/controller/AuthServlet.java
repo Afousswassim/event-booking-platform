@@ -17,10 +17,10 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Objects;
 
-@WebServlet({"/auth/*", "/login", "/register", "/logout", "/client", "/admin", "/agent"})
+@WebServlet({"/auth/*", "/login", "/register", "/logout", "/admin", "/agent"})
 public class AuthServlet extends HttpServlet {
     private static final String FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
-    private static final String USER_NAME = "userName";
+    static final String USER_NAME = "userName";
     private static final String REGISTRATION_COMPLETE = "registrationComplete";
 
     @Inject
@@ -44,7 +44,7 @@ public class AuthServlet extends HttpServlet {
                     AuthResponse.json(response, 200, userBody(users.profile(identity.id())));
                 }
                 case "/access/client", "/access/admin", "/access/agent" -> response.setStatus(204);
-                case "/client", "/admin", "/agent" -> {
+                case "/admin", "/agent" -> {
                     request.setAttribute(AuthSession.CSRF, AuthSession.csrfToken(request.getSession(false)));
                     request.getRequestDispatcher("/WEB-INF/views/auth/account.jsp").forward(request, response);
                 }
@@ -69,14 +69,17 @@ public class AuthServlet extends HttpServlet {
                     handleForm(request, response);
                 }
                 case "/logout" -> {
-                    request.getSession(false).invalidate();
+                    var session = request.getSession(false);
+                    var identity = AuthSession.identity(session);
+                    session.invalidate();
                     if ("/logout".equals(request.getServletPath())) {
-                        response.sendRedirect(request.getContextPath() + "/login");
+                        String destination = identity != null && identity.role() == Role.CLIENT ? "/" : "/login";
+                        response.sendRedirect(request.getContextPath() + destination);
                     } else {
                         response.setStatus(204);
                     }
                 }
-                case "/csrf", "/access/client", "/access/admin", "/access/agent", "/client", "/admin", "/agent" ->
+                case "/csrf", "/access/client", "/access/admin", "/access/agent", "/admin", "/agent" ->
                     methodNotAllowed(response, "GET, HEAD");
                 default -> AuthResponse.error(response, 404, "not_found");
             }
@@ -125,8 +128,11 @@ public class AuthServlet extends HttpServlet {
                 session.setAttribute("userId", profile.id());
                 session.setAttribute(USER_NAME, profile.nom());
                 session.setAttribute("userRole", profile.role());
-                String destination = request.getContextPath()
-                        + (profile.role() == Role.CLIENT ? "/events#catalogue" : profile.role().getHomePath());
+                Long eventId = ReservationServlet.positiveId(request.getParameter("eventId"));
+                String destination = request.getContextPath() + profile.role().getHomePath();
+                if (profile.role() == Role.CLIENT && eventId != null) {
+                    destination = request.getContextPath() + "/my-reservations?eventId=" + eventId;
+                }
                 if (isLegacyForm(request)) {
                     response.sendRedirect(destination);
                 } else {
@@ -187,6 +193,9 @@ public class AuthServlet extends HttpServlet {
         }
         HttpSession session = request.getSession(true);
         request.setAttribute(AuthSession.CSRF, AuthSession.csrfToken(session));
+        if ("/login".equals(request.getServletPath())) {
+            request.setAttribute("bookingEventId", ReservationServlet.positiveId(request.getParameter("eventId")));
+        }
         if (error != null) {
             request.setAttribute("error", error);
         } else if ("/login".equals(request.getServletPath()) && Boolean.TRUE.equals(session.getAttribute(REGISTRATION_COMPLETE))) {

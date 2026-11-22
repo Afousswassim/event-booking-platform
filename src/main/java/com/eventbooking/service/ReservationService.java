@@ -7,6 +7,7 @@ import com.eventbooking.repository.UserRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -50,6 +51,11 @@ public class ReservationService {
      */
     @Transactional
     public Reservation reserver(Long userId, Long eventId, int quantite) {
+        return reserver(userId, eventId, quantite, null);
+    }
+
+    @Transactional
+    public Reservation reserver(Long userId, Long eventId, int quantite, BigDecimal prixAttendu) {
         // 1. Validation des paramètres
         if (userId == null) {
             throw new IllegalArgumentException("L'identifiant de l'utilisateur est obligatoire.");
@@ -79,6 +85,9 @@ public class ReservationService {
         }
         if (event.getDateDebut().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Impossible de réserver : la date de l'événement est déjà passée.");
+        }
+        if (prixAttendu != null && prixAttendu.compareTo(event.getPrix()) != 0) {
+            throw new IllegalStateException("Le prix du billet a changé. Vérifiez le nouveau montant avant de confirmer.");
         }
 
         // 5. Calcul des places déjà réservées et vérification de la capacité restante

@@ -4,20 +4,25 @@ import com.eventbooking.model.Role;
 import com.eventbooking.security.AuthSession;
 import com.eventbooking.service.UserService;
 import com.eventbooking.service.UserService.Profile;
+import jakarta.json.Json;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.StringReader;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -51,6 +56,7 @@ class AuthServletTest {
     void successfulLoginInvalidatesTheOldSessionAndCreatesAnIdentityAndToken() throws Exception {
         String password = UUID.randomUUID().toString();
         when(request.getPathInfo()).thenReturn("/login");
+        when(request.getContextPath()).thenReturn("");
         when(request.getParameter("email")).thenReturn("sam@example.test");
         when(request.getParameter("password")).thenReturn(password);
         when(users.authenticate("sam@example.test", password))
@@ -65,6 +71,9 @@ class AuthServletTest {
         order.verify(current).setAttribute(AuthSession.IDENTITY, new AuthSession.Identity(7L, Role.CLIENT));
         verify(response).setStatus(200);
         assertTrue(body.toString().contains("\"csrfToken\""));
+        try (var reader = Json.createReader(new StringReader(body.toString()))) {
+            assertEquals("/client", reader.readObject().getString("redirectUrl"));
+        }
         assertFalse(body.toString().contains(password));
     }
 
@@ -115,7 +124,32 @@ class AuthServletTest {
         verify(current).setAttribute("userId", 7L);
         verify(current).setAttribute("userName", "Sam");
         verify(current).setAttribute("userRole", Role.CLIENT);
-        verify(response).sendRedirect("/event-booking-platform/events#catalogue");
+        verify(response).sendRedirect("/event-booking-platform/client");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"CLIENT,/my-reservations?eventId=42", "ADMIN,/admin", "AGENT,/agent"})
+    void bookingContinuationOnlyAppliesToClients(Role role, String destination) throws Exception {
+        when(request.getServletPath()).thenReturn("/login");
+        when(request.getContextPath()).thenReturn("/event-booking-platform");
+        when(request.getParameter("eventId")).thenReturn("42");
+        when(users.authenticate(null, null)).thenReturn(new Profile(7L, "Sam", "sam@example.test", role));
+
+        servlet.doPost(request, response);
+
+        verify(response).sendRedirect("/event-booking-platform" + destination);
+    }
+
+    @Test
+    void clientLogoutInvalidatesTheSessionAndReturnsToThePublicHomepage() throws Exception {
+        when(request.getServletPath()).thenReturn("/logout");
+        when(request.getContextPath()).thenReturn("/event-booking-platform");
+        when(previous.getAttribute(AuthSession.IDENTITY)).thenReturn(new AuthSession.Identity(7L, Role.CLIENT));
+
+        servlet.doPost(request, response);
+
+        verify(previous).invalidate();
+        verify(response).sendRedirect("/event-booking-platform/");
     }
 
     @Test

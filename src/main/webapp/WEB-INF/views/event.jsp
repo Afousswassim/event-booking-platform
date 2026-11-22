@@ -27,16 +27,10 @@
                         <c:if test="${not empty event.description}"><p class="event-description"><c:out value="${event.description}" /></p></c:if>
                         <c:choose>
                             <c:when test="${availablePlaces gt 0 and sessionScope.userRole eq 'CLIENT'}">
-                                <form class="action-row" method="post" action="${ctx}/my-reservations">
-                                    <input type="hidden" name="csrfToken" value="<c:out value='${sessionScope.csrfToken}' />">
-                                    <input type="hidden" name="eventId" value="${event.id}">
-                                    <label for="quantity">Nombre de places</label>
-                                    <input class="site-input" id="quantity" name="quantity" type="number" min="1" max="${availablePlaces}" value="1" required>
-                                    <button class="button button-primary" type="submit">Réserver</button>
-                                </form>
+                                <div class="action-row"><a class="button button-primary" href="${ctx}/my-reservations?eventId=${event.id}">Réserver</a></div>
                             </c:when>
                             <c:when test="${availablePlaces gt 0 and empty sessionScope.authUser}">
-                                <div class="action-row"><a class="button button-primary" href="${ctx}/login">Se connecter pour réserver</a></div>
+                                <div class="action-row"><a class="button button-primary" href="${ctx}/login?eventId=${event.id}">Réserver</a></div>
                             </c:when>
                             <c:when test="${not empty availablePlaces and availablePlaces eq 0}">
                                 <p>Événement complet.</p>

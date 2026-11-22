@@ -79,7 +79,7 @@ public class EventServlet extends HttpServlet {
         }
     }
 
-    private static EventCard toCard(Event event, Integer availablePlaces) {
+    static EventCard toCard(Event event, Integer availablePlaces) {
         String category = event.getCategory().getNom();
         String name = event.getTitre().toLowerCase(Locale.ROOT);
         String theme = category.toLowerCase(Locale.ROOT);

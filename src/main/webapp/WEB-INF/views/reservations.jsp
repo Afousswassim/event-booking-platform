@@ -2,20 +2,21 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="pageTitle" value="Mes réservations" />
+<c:set var="clientTab" value="reservations" />
 <!doctype html>
 <html lang="fr">
-<head><%@ include file="/WEB-INF/views/fragments/head.jspf" %></head>
+<head>
+    <%@ include file="/WEB-INF/views/fragments/head.jspf" %>
+    <link rel="stylesheet" href="${ctx}/css/client.css">
+</head>
 <body class="site-page">
     <%@ include file="/WEB-INF/views/fragments/header.jspf" %>
     <main class="site-container detail-page" id="main-content">
-        <a class="text-link" href="${ctx}/events#catalogue">← Tous les événements</a>
+        <%@ include file="/WEB-INF/views/fragments/client-nav.jspf" %>
         <section class="empty-state" aria-labelledby="reservations-title">
             <h1 id="reservations-title">Mes réservations</h1>
+            <p><a class="text-link" href="${ctx}/my-tickets">Voir mes billets</a></p>
             <c:choose>
-                <c:when test="${not empty bookingEventId}">
-                    <p role="alert">La réservation n’a pas pu être confirmée. Vérifiez la date de l’événement et le nombre de places disponibles.</p>
-                    <div class="action-row"><a class="button button-primary" href="${ctx}/events/${bookingEventId}">Retour à l’événement</a></div>
-                </c:when>
                 <c:when test="${empty reservations}"><p>Vous n’avez pas encore de réservation.</p></c:when>
                 <c:otherwise>
                     <ul>

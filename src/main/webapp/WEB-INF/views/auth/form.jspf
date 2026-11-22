@@ -44,6 +44,9 @@
                 <p class="auth-notice auth-notice-error" id="auth-feedback" role="alert" ${empty requestScope.error ? 'hidden' : ''}><c:out value="${requestScope.error}" /></p>
                 <form class="auth-form" method="post" action="${ctx}/${route}" data-endpoint="${ctx}/${registering ? 'register' : 'auth/login'}" data-mode="${route}">
                     <input type="hidden" name="csrfToken" value="<c:out value='${requestScope.csrfToken}' />">
+                    <c:if test="${not registering and not empty bookingEventId}">
+                        <input type="hidden" name="eventId" value="${bookingEventId}">
+                    </c:if>
                     <c:if test="${registering}">
                         <div class="auth-field">
                             <label for="auth-name">Nom complet</label>
