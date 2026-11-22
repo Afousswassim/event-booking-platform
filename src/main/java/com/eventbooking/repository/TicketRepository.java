@@ -1,7 +1,9 @@
 package com.eventbooking.repository;
 
+import com.eventbooking.model.Reservation;
 import com.eventbooking.model.Ticket;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
@@ -29,13 +31,11 @@ public class TicketRepository {
 
     public Ticket findByCodeUnique(String codeUnique) {
         return em.createQuery(
-                "SELECT t FROM Ticket t JOIN FETCH t.reservation r JOIN FETCH r.event " +
-                "WHERE t.codeUnique = :codeUnique",
+                "SELECT t FROM Ticket t WHERE t.codeUnique = :codeUnique",
                 Ticket.class)
                  .setParameter("codeUnique", codeUnique)
-                 .getResultStream()
-                 .findFirst()
-                 .orElse(null);
+                 .setHint("jakarta.persistence.loadgraph", eventGraph())
+                 .getSingleResultOrNull();
     }
 
     /**
@@ -44,14 +44,11 @@ public class TicketRepository {
      */
     public Ticket findByCodeUniqueWithLock(String codeUnique) {
         return em.createQuery(
-                "SELECT t FROM Ticket t JOIN FETCH t.reservation r JOIN FETCH r.event " +
-                "WHERE t.codeUnique = :codeUnique",
+                "SELECT t FROM Ticket t JOIN FETCH t.reservation WHERE t.codeUnique = :codeUnique",
                 Ticket.class)
                  .setParameter("codeUnique", codeUnique)
                  .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-                 .getResultStream()
-                 .findFirst()
-                 .orElse(null);
+                 .getSingleResultOrNull();
     }
 
     public List<Ticket> findByReservation(Long reservationId) {
@@ -60,6 +57,21 @@ public class TicketRepository {
                 Ticket.class)
                  .setParameter("reservationId", reservationId)
                  .getResultList();
+    }
+
+    public List<Ticket> findByUser(long userId) {
+        return em.createQuery(
+                "SELECT t FROM Ticket t WHERE t.reservation.user.id = :userId ORDER BY t.id DESC",
+                Ticket.class)
+                .setParameter("userId", userId)
+                .setHint("jakarta.persistence.loadgraph", eventGraph())
+                .getResultList();
+    }
+
+    private EntityGraph<Ticket> eventGraph() {
+        var graph = em.createEntityGraph(Ticket.class);
+        graph.addSubgraph("reservation", Reservation.class).addAttributeNodes("event");
+        return graph;
     }
 
     @Transactional

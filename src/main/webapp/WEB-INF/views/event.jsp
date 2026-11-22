@@ -25,6 +25,17 @@
                             <div><dt>Tarif</dt><dd><c:out value="${event.price}" /></dd></div>
                         </dl>
                         <c:if test="${not empty event.description}"><p class="event-description"><c:out value="${event.description}" /></p></c:if>
+                        <c:choose>
+                            <c:when test="${availablePlaces gt 0 and sessionScope.userRole eq 'CLIENT'}">
+                                <div class="action-row"><a class="button button-primary" href="${ctx}/my-reservations?eventId=${event.id}">Réserver</a></div>
+                            </c:when>
+                            <c:when test="${availablePlaces gt 0 and empty sessionScope.authUser}">
+                                <div class="action-row"><a class="button button-primary" href="${ctx}/login?eventId=${event.id}">Réserver</a></div>
+                            </c:when>
+                            <c:when test="${not empty availablePlaces and availablePlaces eq 0}">
+                                <p>Événement complet.</p>
+                            </c:when>
+                        </c:choose>
                     </div>
                 </article>
             </c:otherwise>

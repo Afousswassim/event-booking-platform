@@ -1,0 +1,14 @@
+<%@ page pageEncoding="UTF-8" %>
+<nav class="client-nav" aria-label="Navigation de l’espace client">
+    <div class="client-nav-links">
+        <a href="${ctx}/client" ${clientTab eq 'overview' ? 'aria-current="page"' : ''}>Vue d’ensemble</a>
+        <a href="${ctx}/my-reservations" ${clientTab eq 'reservations' ? 'aria-current="page"' : ''}>Mes réservations</a>
+        <a href="${ctx}/my-tickets" ${clientTab eq 'tickets' ? 'aria-current="page"' : ''}>Mes billets</a>
+        <a href="${ctx}/client/profile" ${clientTab eq 'profile' ? 'aria-current="page"' : ''}>Mon profil</a>
+        <a href="${ctx}/events#catalogue">Explorer les événements</a>
+    </div>
+    <form method="post" action="${ctx}/logout">
+        <input type="hidden" name="csrfToken" value="<c:out value='${sessionScope.csrfToken}' />">
+        <button class="button client-secondary" type="submit">Déconnexion</button>
+    </form>
+</nav>

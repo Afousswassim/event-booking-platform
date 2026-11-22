@@ -19,6 +19,13 @@
             <h1 id="account-title">Bonjour, <c:out value="${sessionScope.userName}" />.</h1>
             <div class="action-row">
                 <a class="button button-primary" href="${ctx}/events#catalogue">Explorer les événements</a>
+                <c:if test="${sessionScope.userRole eq 'CLIENT'}">
+                    <a class="button button-outline" href="${ctx}/my-reservations">Mes réservations</a>
+                    <a class="button button-outline" href="${ctx}/my-tickets">Mes billets</a>
+                </c:if>
+                <c:if test="${sessionScope.userRole eq 'AGENT'}">
+                    <a class="button button-outline" href="${ctx}/agent/tickets">Valider un billet</a>
+                </c:if>
                 <form method="post" action="${ctx}/logout">
                     <input type="hidden" name="csrfToken" value="<c:out value='${requestScope.csrfToken}' />">
                     <button class="button button-outline" type="submit">Se déconnecter</button>

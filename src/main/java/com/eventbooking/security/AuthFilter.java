@@ -38,7 +38,9 @@ public class AuthFilter implements Filter {
         if (!isPublic(path)) {
             if (identity == null) {
                 if ((isClientPage(path) || isAccountPage(path)) && (method.equals("GET") || method.equals("HEAD"))) {
-                    response.sendRedirect(request.getContextPath() + "/login");
+                    String eventId = "/my-reservations".equals(path) ? request.getParameter("eventId") : null;
+                    String continuation = eventId != null && eventId.matches("[1-9][0-9]{0,18}") ? "?eventId=" + eventId : "";
+                    response.sendRedirect(request.getContextPath() + "/login" + continuation);
                 } else {
                     AuthResponse.error(response, 401, "authentication_required");
                 }
@@ -96,6 +98,6 @@ public class AuthFilter implements Filter {
 
     private static boolean isAccountPage(String path) {
         return path.equals(Role.CLIENT.getHomePath()) || path.equals(Role.ADMIN.getHomePath())
-                || path.equals(Role.AGENT.getHomePath());
+                || path.equals(Role.AGENT.getHomePath()) || path.equals("/client/profile");
     }
 }

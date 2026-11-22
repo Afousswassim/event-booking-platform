@@ -5,8 +5,16 @@
         <a class="site-brand" href="${ctx}/" aria-label="Evently, accueil">evently<span>.</span></a>
         <nav class="site-nav" aria-label="Navigation principale">
             <a href="${ctx}/">Accueil</a>
-            <a href="${ctx}/events#catalogue">Événements</a>
-            <a href="${ctx}/#categories">Catégories</a>
+            <c:choose>
+                <c:when test="${isCataloguePage}">
+                    <a href="${ctx}/events" aria-current="page">Explorer</a>
+                    <a href="#categories">Catégories</a>
+                </c:when>
+                <c:otherwise>
+                    <a href="${ctx}/events#catalogue">Événements</a>
+                    <a href="${ctx}/#categories">Catégories</a>
+                </c:otherwise>
+            </c:choose>
         </nav>
         <div class="site-actions">
             <c:choose>
