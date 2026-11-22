@@ -2,6 +2,7 @@ package com.eventbooking.controller;
 
 import com.eventbooking.security.AuthResponse;
 import com.eventbooking.security.AuthSession;
+import com.eventbooking.model.Role;
 import com.eventbooking.service.UserService;
 import com.eventbooking.service.UserService.Profile;
 import jakarta.inject.Inject;
@@ -124,7 +125,8 @@ public class AuthServlet extends HttpServlet {
                 session.setAttribute("userId", profile.id());
                 session.setAttribute(USER_NAME, profile.nom());
                 session.setAttribute("userRole", profile.role());
-                String destination = request.getContextPath() + profile.role().getHomePath();
+                String destination = request.getContextPath()
+                        + (profile.role() == Role.CLIENT ? "/events#catalogue" : profile.role().getHomePath());
                 if (isLegacyForm(request)) {
                     response.sendRedirect(destination);
                 } else {

@@ -115,7 +115,7 @@ class AuthServletTest {
         verify(current).setAttribute("userId", 7L);
         verify(current).setAttribute("userName", "Sam");
         verify(current).setAttribute("userRole", Role.CLIENT);
-        verify(response).sendRedirect("/event-booking-platform/client");
+        verify(response).sendRedirect("/event-booking-platform/events#catalogue");
     }
 
     @Test

@@ -1,6 +1,8 @@
 package com.eventbooking.controller;
 
 import com.eventbooking.model.Event;
+import com.eventbooking.model.Role;
+import com.eventbooking.security.AuthSession;
 import com.eventbooking.service.EventService;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
@@ -10,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -32,10 +35,17 @@ public class EventServlet extends HttpServlet {
         }
         Long id = eventId(path);
         Event event = id == null ? null : events.getPublishedEvent(id);
+        Integer availablePlaces = null;
         if (event == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        } else if (event.getDateDebut().isAfter(LocalDateTime.now())) {
+            var identity = AuthSession.identity(request.getSession(false));
+            if (identity == null || identity.role() == Role.CLIENT) {
+                availablePlaces = events.getAvailablePlaces(id);
+            }
         }
-        request.setAttribute("event", event == null ? null : toCard(event));
+        request.setAttribute("availablePlaces", availablePlaces);
+        request.setAttribute("event", event == null ? null : toCard(event, availablePlaces));
         request.getRequestDispatcher("/WEB-INF/views/event.jsp").forward(request, response);
     }
 
@@ -44,7 +54,11 @@ public class EventServlet extends HttpServlet {
         String query = input.length() > 120 ? input.substring(0, 120) : input;
         String category = Objects.toString(request.getParameter("category"), "");
         String search = query.toLowerCase(Locale.ROOT);
-        List<EventCard> catalogue = events.getPublishedEvents().stream().map(EventServlet::toCard).toList();
+        var published = events.getPublishedEvents();
+        var availability = events.getAvailablePlacesForPublishedEvents(published);
+        List<EventCard> catalogue = published.stream()
+                .map(event -> toCard(event, availability.get(event.getId())))
+                .toList();
         List<String> categories = catalogue.stream().map(EventCard::category).distinct().sorted().toList();
         request.setAttribute("catalogueReady", true);
         request.setAttribute("query", query);
@@ -52,7 +66,8 @@ public class EventServlet extends HttpServlet {
         request.setAttribute("categories", categories);
         request.setAttribute("featured", catalogue.isEmpty() ? null : catalogue.getFirst());
         request.setAttribute("events", catalogue.stream().filter(event -> event.matches(search, category)).toList());
-        request.getRequestDispatcher("/index.jsp").forward(request, response);
+        String view = "/events".equals(request.getServletPath()) ? "/WEB-INF/views/catalogue.jsp" : "/index.jsp";
+        request.getRequestDispatcher(view).forward(request, response);
     }
 
     private static Long eventId(String path) {
@@ -64,7 +79,7 @@ public class EventServlet extends HttpServlet {
         }
     }
 
-    private static EventCard toCard(Event event) {
+    private static EventCard toCard(Event event, Integer availablePlaces) {
         String category = event.getCategory().getNom();
         String name = event.getTitre().toLowerCase(Locale.ROOT);
         String theme = category.toLowerCase(Locale.ROOT);
@@ -76,11 +91,11 @@ public class EventServlet extends HttpServlet {
         String price = event.getPrix().signum() == 0 ? "Gratuit" : NumberFormat.getNumberInstance(Locale.FRENCH).format(event.getPrix()) + " MAD";
         var starts = event.getDateDebut();
         return new EventCard(event.getId(), event.getTitre(), event.getDescription(), event.getLieu(), category,
-                starts.toString(), DATE.format(starts), TIME.format(starts), price, image);
+                starts.toString(), DATE.format(starts), TIME.format(starts), price, image, availablePlaces);
     }
 
     public record EventCard(long id, String title, String description, String venue, String category,
-                            String start, String date, String time, String price, String image) {
+                            String start, String date, String time, String price, String image, Integer availablePlaces) {
         public long getId() { return id; }
         public String getTitle() { return title; }
         public String getDescription() { return description; }
@@ -91,6 +106,7 @@ public class EventServlet extends HttpServlet {
         public String getTime() { return time; }
         public String getPrice() { return price; }
         public String getImage() { return image; }
+        public Integer getAvailablePlaces() { return availablePlaces; }
 
         boolean matches(String query, String selectedCategory) {
             return (selectedCategory.isEmpty() || category.equals(selectedCategory))

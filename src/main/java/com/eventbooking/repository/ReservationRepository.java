@@ -1,5 +1,7 @@
 package com.eventbooking.repository;
 
+import com.eventbooking.model.Event;
+import com.eventbooking.model.EventStatus;
 import com.eventbooking.model.Reservation;
 import com.eventbooking.model.ReservationStatus;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -7,6 +9,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Repository JPA pour la gestion des réservations.
@@ -23,11 +27,13 @@ public class ReservationRepository {
     }
 
     public List<Reservation> findByUser(Long userId) {
+        var graph = em.createEntityGraph(Reservation.class);
+        graph.addSubgraph("event", Event.class).addAttributeNodes("category");
         return em.createQuery(
-                "SELECT r FROM Reservation r JOIN FETCH r.event e JOIN FETCH e.category " +
-                "WHERE r.user.id = :userId ORDER BY r.dateReservation DESC",
+                "SELECT r FROM Reservation r WHERE r.user.id = :userId ORDER BY r.dateReservation DESC",
                 Reservation.class)
                  .setParameter("userId", userId)
+                 .setHint("jakarta.persistence.loadgraph", graph)
                  .getResultList();
     }
 
@@ -51,6 +57,19 @@ public class ReservationRepository {
                      .setParameter("statut", ReservationStatus.CONFIRMEE)
                      .getSingleResult();
         return sum != null ? sum.intValue() : 0;
+    }
+
+    public Map<Long, Long> countReservedPlacesForPublishedEvents() {
+        var rows = em.createQuery(
+                "SELECT r.event.id, SUM(r.quantite) FROM Reservation r " +
+                "WHERE r.statut = :status AND r.event.statut = :eventStatus GROUP BY r.event.id",
+                Object[].class)
+                .setParameter("status", ReservationStatus.CONFIRMEE)
+                .setParameter("eventStatus", EventStatus.PUBLIE)
+                .getResultList();
+        Map<Long, Long> counts = new HashMap<>();
+        for (Object[] row : rows) counts.put((Long) row[0], (Long) row[1]);
+        return counts;
     }
 
     @Transactional

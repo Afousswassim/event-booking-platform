@@ -12,6 +12,8 @@ import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Service métier pour la gestion des catégories et des événements.
@@ -129,6 +131,18 @@ public class EventService {
 
     public List<Event> getPublishedEvents() {
         return eventRepository.findPublishedEvents();
+    }
+
+    public Map<Long, Integer> getAvailablePlacesForPublishedEvents(List<Event> published) {
+        if (published.isEmpty()) return Map.of();
+        var reserved = reservationRepository.countReservedPlacesForPublishedEvents();
+        var now = LocalDateTime.now();
+        Map<Long, Integer> available = new HashMap<>();
+        for (Event event : published) {
+            long remaining = event.getCapacite() - reserved.getOrDefault(event.getId(), 0L);
+            available.put(event.getId(), event.getDateDebut().isAfter(now) ? (int) Math.max(0, remaining) : 0);
+        }
+        return available;
     }
 
     public Event getPublishedEvent(long id) {

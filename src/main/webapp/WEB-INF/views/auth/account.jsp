@@ -19,6 +19,9 @@
             <h1 id="account-title">Bonjour, <c:out value="${sessionScope.userName}" />.</h1>
             <div class="action-row">
                 <a class="button button-primary" href="${ctx}/events#catalogue">Explorer les événements</a>
+                <c:if test="${sessionScope.userRole eq 'CLIENT'}">
+                    <a class="button button-outline" href="${ctx}/my-reservations">Mes réservations</a>
+                </c:if>
                 <form method="post" action="${ctx}/logout">
                     <input type="hidden" name="csrfToken" value="<c:out value='${requestScope.csrfToken}' />">
                     <button class="button button-outline" type="submit">Se déconnecter</button>

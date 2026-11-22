@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:if test="${not requestScope.catalogueReady}"><jsp:forward page="/events" /></c:if>
+<c:if test="${not requestScope.catalogueReady}"><jsp:forward page="/" /></c:if>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="pageTitle" value="Concerts, festivals et sorties" />
 <!doctype html>
@@ -19,7 +19,7 @@
                     <h1>Moins de scroll.<br>Plus de <em>vibes.</em></h1>
                     <p>Des concerts qui vous font vibrer, des festivals qui vous rassemblent. Trouvez votre prochaine sortie.</p>
                     <div class="action-row">
-                        <a class="button button-primary" href="#catalogue">Explorer les événements <span aria-hidden="true">↗</span></a>
+                        <a class="button button-primary" href="${ctx}/events">Explorer les événements <span aria-hidden="true">↗</span></a>
                         <a class="button button-outline" href="#categories">Voir les catégories</a>
                     </div>
                 </div>
