@@ -1,0 +1,36 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:url var="qrUrl" value="/my-tickets"><c:param name="qr" value="${pass.id}" /></c:url>
+<c:url var="passUrl" value="/my-tickets">
+    <c:param name="ticket" value="${pass.id}" />
+    <c:if test="${not empty reservationId}"><c:param name="reservationId" value="${reservationId}" /></c:if>
+</c:url>
+<article class="ticket-pass ${featured ? 'is-featured' : ''}" data-ticket data-status="${pass.status}" aria-labelledby="ticket-title-${pass.id}">
+    <div class="ticket-pass-cover">
+        <img src="${ctx}/images/<c:out value='${pass.event.image}' />" alt="" width="416" height="240" loading="lazy">
+        <div class="ticket-pass-heading">
+            <span class="ticket-pass-category"><c:out value="${pass.event.category}" /></span>
+            <span class="ticket-reference">EVT-${pass.reservationId}</span>
+            <h3 id="ticket-title-${pass.id}"><c:out value="${pass.event.title}" /></h3>
+            <p><time datetime="${pass.event.start}"><c:out value="${pass.event.date}" /> · <c:out value="${pass.event.time}" /></time></p>
+        </div>
+    </div>
+    <div class="ticket-pass-body">
+        <div class="ticket-pass-info">
+            <span class="ticket-status" data-status="${pass.status}">
+                ${pass.status eq 'UTILISE' ? 'Utilisé' : (pass.status eq 'ANNULE' ? 'Annulé' : 'Valide')}
+                <c:if test="${pass.upcoming}"> · À venir</c:if>
+            </span>
+            <p class="ticket-venue"><c:out value="${pass.event.venue}" /></p>
+            <dl>
+                <div><dt>Titulaire</dt><dd><c:out value="${sessionScope.userName}" /></dd></div>
+                <div><dt>Code du billet</dt><dd><code class="ticket-code"${ticketDetail ? ' tabindex="0"' : ''}><c:out value="${pass.code}" /></code></dd></div>
+            </dl>
+            <c:if test="${not ticketDetail}">
+                <a class="button button-primary" href="<c:out value='${passUrl}' />">Afficher le billet</a>
+            </c:if>
+        </div>
+        <div class="ticket-pass-qr">
+            <img src="<c:out value='${qrUrl}' />" alt="QR code du billet" width="256" height="256" ${ticketDetail ? '' : 'loading="lazy"'}>
+        </div>
+    </div>
+</article>

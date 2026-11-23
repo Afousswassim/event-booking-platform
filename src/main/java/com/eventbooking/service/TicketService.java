@@ -64,6 +64,10 @@ public class TicketService {
         return ticketRepository.findByUser(userId);
     }
 
+    public Ticket getTicketForUser(long ticketId, long userId) {
+        return ticketRepository.findByIdForUser(ticketId, userId);
+    }
+
     /**
      * Valide un ticket lors de l'entrée à l'événement.
      * Cette méthode acquiert un verrou pessimiste d'écriture pour interdire formellement

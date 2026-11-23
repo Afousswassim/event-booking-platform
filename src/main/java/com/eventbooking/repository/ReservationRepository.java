@@ -6,6 +6,7 @@ import com.eventbooking.model.Reservation;
 import com.eventbooking.model.ReservationStatus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -35,6 +36,19 @@ public class ReservationRepository {
                  .setParameter("userId", userId)
                  .setHint("jakarta.persistence.loadgraph", graph)
                  .getResultList();
+    }
+
+    public Reservation findByIdForUser(long id, long userId, LockModeType lock) {
+        var query = em.createQuery("SELECT r FROM Reservation r WHERE r.id = :id AND r.user.id = :userId",
+                Reservation.class).setParameter("id", id).setParameter("userId", userId);
+        if (lock == LockModeType.NONE) {
+            var graph = em.createEntityGraph(Reservation.class);
+            graph.addSubgraph("event", Event.class).addAttributeNodes("category");
+            query.setHint("jakarta.persistence.loadgraph", graph);
+        } else {
+            query.setLockMode(lock);
+        }
+        return query.getSingleResultOrNull();
     }
 
     public List<Reservation> findByEvent(Long eventId) {

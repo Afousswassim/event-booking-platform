@@ -1,0 +1,31 @@
+<%@ page pageEncoding="UTF-8" %>
+<article class="reservation-card ${featured ? 'is-featured' : ''}" data-reservation data-group="${booking.group}"
+         data-event-date="${booking.event.start}" data-booked-at="${booking.bookedAt}" aria-labelledby="reservation-${booking.id}">
+    <div class="ticket-pass-cover reservation-cover">
+        <img src="${ctx}/images/<c:out value='${booking.event.image}' />" alt="" width="416" height="240" loading="lazy">
+        <div class="ticket-pass-heading">
+            <span class="ticket-pass-category"><c:out value="${booking.event.category}" /></span>
+            <span class="reservation-cover-date"><c:out value="${booking.event.date}" /></span>
+        </div>
+    </div>
+    <div class="reservation-card-body">
+        <div class="reservation-meta">
+            <span class="reservation-reference">EVT-${booking.id}</span>
+            <span class="ticket-status" data-status="${booking.group eq 'cancelled' ? 'ANNULE' : (booking.group eq 'finished' ? 'UTILISE' : 'VALIDE')}"><c:out value="${booking.status}" /></span>
+        </div>
+        <h3 id="reservation-${booking.id}"><c:out value="${booking.event.title}" /></h3>
+        <p><time datetime="${booking.event.start}"><c:out value="${booking.event.date}" /> · <c:out value="${booking.event.time}" /></time></p>
+        <p><c:out value="${booking.event.venue}" /></p>
+        <p>${booking.quantity} ${booking.quantity eq 1 ? 'billet réservé' : 'billets réservés'}</p>
+        <dl class="reservation-total">
+            <dt>Montant total <small>au tarif actuel</small></dt>
+            <dd><c:out value="${booking.total}" /></dd>
+        </dl>
+        <div class="action-row">
+            <c:if test="${empty reservationDetail}">
+                <a class="button button-primary" href="${ctx}/my-reservations?reservationId=${booking.id}"><span class="reservation-long-label">Voir les détails</span><span class="reservation-short-label">Détails</span></a>
+            </c:if>
+            <a class="button client-secondary reservation-tickets" href="${ctx}/my-tickets?reservationId=${booking.id}">Mes billets</a>
+        </div>
+    </div>
+</article>
