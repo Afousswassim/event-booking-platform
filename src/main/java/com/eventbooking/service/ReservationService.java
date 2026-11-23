@@ -6,6 +6,7 @@ import com.eventbooking.repository.ReservationRepository;
 import com.eventbooking.repository.UserRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -128,12 +129,28 @@ public class ReservationService {
         if (reservation == null) {
             throw new IllegalArgumentException("Réservation introuvable avec l'identifiant : " + reservationId);
         }
+        return cancel(reservation);
+    }
+
+    @Transactional
+    public boolean annulerReservationPourClient(long reservationId, long clientId) {
+        var reservation = reservationRepository.findByIdForUser(reservationId, clientId, LockModeType.PESSIMISTIC_WRITE);
+        if (reservation == null) return false;
+        cancel(reservation);
+        return true;
+    }
+
+    public Reservation getReservationForClient(long reservationId, long clientId) {
+        return reservationRepository.findByIdForUser(reservationId, clientId, LockModeType.NONE);
+    }
+
+    private Reservation cancel(Reservation reservation) {
 
         if (reservation.getStatut() == ReservationStatus.ANNULEE) {
             throw new IllegalStateException("Cette réservation est déjà annulée.");
         }
 
-        if (reservation.getEvent().getDateDebut().isBefore(LocalDateTime.now())) {
+        if (!reservation.getEvent().getDateDebut().isAfter(LocalDateTime.now())) {
             throw new IllegalStateException("Impossible d'annuler une réservation pour un événement déjà passé.");
         }
 

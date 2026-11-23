@@ -1,5 +1,8 @@
 package com.eventbooking.controller;
 
+import com.eventbooking.model.EventStatus;
+import com.eventbooking.model.Reservation;
+import com.eventbooking.model.ReservationStatus;
 import com.eventbooking.model.Role;
 import com.eventbooking.security.AuthSession;
 import com.eventbooking.service.EventService;
@@ -18,6 +21,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.UUID;
@@ -59,8 +63,20 @@ public class ReservationServlet extends HttpServlet {
             request.getRequestDispatcher(BOOKING).forward(request, response);
         } else if (event != null) {
             showCheckout(request, response, positiveId(event), 1, null, HttpServletResponse.SC_OK);
+        } else if (request.getParameter("reservationId") != null) {
+            showReservation(request, response, client.id(), positiveId(request.getParameter("reservationId")));
         } else {
-            request.setAttribute("reservations", reservations.getReservationsByUser(client.id()));
+            var now = LocalDateTime.now();
+            var bookings = reservations.getReservationsByUser(client.id()).stream()
+                    .map(reservation -> BookingCard.from(reservation, now))
+                    .sorted(Comparator.comparing(BookingCard::group).reversed()
+                            .thenComparing(card -> card.group().equals("upcoming") ? card.event().start() : "")
+                            .thenComparing(BookingCard::bookedAt, Comparator.reverseOrder()))
+                    .toList();
+            request.setAttribute("reservations", bookings);
+            request.setAttribute("upcomingCount", bookings.stream().filter(card -> card.group().equals("upcoming")).count());
+            request.setAttribute("finishedCount", bookings.stream().filter(card -> card.group().equals("finished")).count());
+            request.setAttribute("cancelledCount", bookings.stream().filter(card -> card.group().equals("cancelled")).count());
             request.getRequestDispatcher(HISTORY).forward(request, response);
         }
     }
@@ -70,6 +86,11 @@ public class ReservationServlet extends HttpServlet {
             throws ServletException, IOException {
         var session = request.getSession(false);
         var client = AuthSession.identity(session);
+        String cancellation = request.getParameter("cancelReservation");
+        if (cancellation != null) {
+            cancelReservation(request, response, client.id(), positiveId(cancellation));
+            return;
+        }
         var token = request.getParameter("checkoutToken");
         Long eventId = positiveId(request.getParameter("eventId"));
         Long count = positiveId(request.getParameter("quantity"));
@@ -107,6 +128,34 @@ public class ReservationServlet extends HttpServlet {
             }
             redirectToReceipt(request, response, token);
         }
+    }
+
+    private void showReservation(HttpServletRequest request, HttpServletResponse response, long clientId, Long id)
+            throws ServletException, IOException {
+        var reservation = id == null ? null : reservations.getReservationForClient(id, clientId);
+        if (reservation == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        request.setAttribute("reservationDetail", BookingCard.from(reservation, LocalDateTime.now()));
+        request.getRequestDispatcher(HISTORY).forward(request, response);
+    }
+
+    private void cancelReservation(HttpServletRequest request, HttpServletResponse response, long clientId, Long id)
+            throws ServletException, IOException {
+        try {
+            if (id == null || !reservations.annulerReservationPourClient(id, clientId)) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+        } catch (IllegalStateException refused) {
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            request.setAttribute("cancellationError", "Cette réservation ne peut plus être annulée.");
+            showReservation(request, response, clientId, id);
+            return;
+        }
+        response.setStatus(HttpServletResponse.SC_SEE_OTHER);
+        response.setHeader("Location", request.getContextPath() + "/my-reservations?reservationId=" + id);
     }
 
     private void showCheckout(HttpServletRequest request, HttpServletResponse response, Long eventId,
@@ -204,6 +253,32 @@ public class ReservationServlet extends HttpServlet {
         boolean matches(long event, BigDecimal amount) {
             return receipt == null && eventId == event && price.compareTo(amount) == 0;
         }
+    }
+
+    public record BookingCard(long id, int quantity, String group, String status, String bookedAt,
+                              String total, boolean cancellable, EventServlet.EventCard event) {
+        static BookingCard from(Reservation reservation, LocalDateTime now) {
+            var event = reservation.getEvent();
+            boolean cancelled = reservation.getStatut() == ReservationStatus.ANNULEE;
+            boolean future = event.getDateDebut().isAfter(now);
+            boolean eventCancelled = event.getStatut() == EventStatus.ANNULE;
+            boolean ended = !future || event.getStatut() == EventStatus.TERMINE;
+            String group = cancelled || eventCancelled ? "cancelled" : (ended ? "finished" : "upcoming");
+            String status = cancelled ? "Annulée" : (eventCancelled ? "Événement annulé" : (ended ? "Terminée" : "Confirmée"));
+            return new BookingCard(reservation.getId(), reservation.getQuantite(), group, status,
+                    reservation.getDateReservation().toString(),
+                    amount(event.getPrix().multiply(BigDecimal.valueOf(reservation.getQuantite()))),
+                    !cancelled && future, EventServlet.toCard(event, null));
+        }
+
+        public long getId() { return id; }
+        public int getQuantity() { return quantity; }
+        public String getGroup() { return group; }
+        public String getStatus() { return status; }
+        public String getBookedAt() { return bookedAt; }
+        public String getTotal() { return total; }
+        public boolean isCancellable() { return cancellable; }
+        public EventServlet.EventCard getEvent() { return event; }
     }
 
     public record Receipt(long id, String title, int quantity, String total) implements Serializable {

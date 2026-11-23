@@ -1,5 +1,6 @@
 package com.eventbooking.repository;
 
+import com.eventbooking.model.Event;
 import com.eventbooking.model.Reservation;
 import com.eventbooking.model.Ticket;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -68,9 +69,18 @@ public class TicketRepository {
                 .getResultList();
     }
 
+    public Ticket findByIdForUser(long id, long userId) {
+        return em.createQuery(
+                "SELECT t FROM Ticket t WHERE t.id = :id AND t.reservation.user.id = :userId", Ticket.class)
+                .setParameter("id", id)
+                .setParameter("userId", userId)
+                .setHint("jakarta.persistence.loadgraph", eventGraph())
+                .getSingleResultOrNull();
+    }
+
     private EntityGraph<Ticket> eventGraph() {
         var graph = em.createEntityGraph(Ticket.class);
-        graph.addSubgraph("reservation", Reservation.class).addAttributeNodes("event");
+        graph.addSubgraph("reservation", Reservation.class).addSubgraph("event", Event.class).addAttributeNodes("category");
         return graph;
     }
 
